@@ -10,7 +10,7 @@ const cors = require('cors') // ให้ server กับ client ติดต�
 
 // middleware
 app.use(morgan('dev'))// dev, combined
-app.use(express.json())
+app.use(express.json({limit: '20mb'}))// อนุญาตให้ส่งข้อมูลขนาดใหญ่
 app.use(cors())// allow all
 
 // app.use('/api', authRouter)
