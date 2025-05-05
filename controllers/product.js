@@ -1,6 +1,13 @@
 const { prisma } = require('../config/prisma')
 const cloudinary = require('cloudinary').v2
 
+// Cloudinary img
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // เข้าถึงตัวแปรที่ set ค่าในไฟล์ .env
+    api_key: process.env.CLOUDINARY_API_KEY, 
+    api_secret: process.env.CLOUDINARY_API_SECRET, // Click 'View API Keys' above to copy your API secret
+})
+
 exports.create = async (req, res) => {
     try {
         const { title, description, price, quantity, categoryId, images  } = req.body
@@ -112,7 +119,27 @@ exports.update = async (req, res) => {
 exports.remove = async (req, res) => {
     try {
         const { id } = req.params
+        // Step 1 find product
+        const products = await prisma.product.findFirst({
+            where: { id: Number(id) },
+            include: { images: true }
+        })
+        if (!products) {
+            return res.status(400).json({ message: "Product not found!" })
+        }
+        // Step 2 promiss (ลบแบบรอ) ลบรูปภาพใน cloudinary
+        const deletedImage = products.images.map((img => 
+            new Promise((resolve, reject) => {
+                // Delete from cloudinary
+                cloudinary.uploader.destroy(img.public_id, (error, result) => {
+                    if (error) reject(error)
+                    else resolve(result)
+                })
+            })
+        ))
 
+        await Promise.all(deletedImage)
+        // Step 3 delete product
         await prisma.product.delete({
             where: {
                 id: Number(id)
@@ -232,13 +259,6 @@ exports.searchFilters = async (req, res) => {// filters 3 อันคือ ค
         res.status(500).json({ message: "Server Error" })
     }
 }
-
-// Cloudinary img
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, // เข้าถึงตัวแปรที่ set ค่าในไฟล์ .env
-    api_key: process.env.CLOUDINARY_API_KEY, 
-    api_secret: process.env.CLOUDINARY_API_SECRET, // Click 'View API Keys' above to copy your API secret
-})
 
 exports.createImages = async (req, res) => {
     try {
