@@ -54,6 +54,10 @@ model Order {
   orderedById Int
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+  stripePaymentId String @default("")
+  amount Int @default(0) //จน.เงิน
+  status String @default("pending")
+  currency String @default("thb")// ค่าเงิน 
 }
 
 model ProductOnOrder {

@@ -12,7 +12,6 @@ exports.create = async (req, res) => {
     try {
         const { title, description, price, quantity, categoryId, images  } = req.body
 
-        console.log('img', images)
         const product = await prisma.product.create({
             data: {
                 title: title,
@@ -164,7 +163,6 @@ exports.listby = async (req, res) => {// เรียงตาม order ที�
             }
         })
         
-        console.log(sort, order, limit)
         res.send(products)
     } catch (err) {
         console.log(err)
@@ -239,17 +237,14 @@ exports.searchFilters = async (req, res) => {// filters 3 อันคือ ค
     try {
         const { query, category, price } = req.body
         if (query) {
-            console.log('query:', query)
             await handleQuery(req, res, query)   
         }
 
         if (category) {
-            console.log('categoory:', category)  
             await handleCategory(req, res, category) 
         }
 
         if (price) {
-            console.log('price:', price)   
             await handlePrice(req, res, price)
         }
         

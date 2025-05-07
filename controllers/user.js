@@ -52,8 +52,8 @@ exports.userCart = async (req, res) => {
     try {
         const { cart } = req.body
 
-        console.log(cart)
-        console.log(req.user.id)
+        // console.log(cart)
+        // console.log(req.user.id)
 
         const user = await prisma.user.findFirst({
             where: { id: Number(req.user.id) }
@@ -93,8 +93,8 @@ exports.userCart = async (req, res) => {
                 orderedById: user.id
             }
         })
-        console.log('newCart', newCart)
-        console.log('cartTotal', cartTotal)
+        // console.log('newCart', newCart)
+        // console.log('cartTotal', cartTotal)
         res.send('Add Cart OK')
     } catch (err) {
         console.log(err)
@@ -116,7 +116,8 @@ exports.getUserCart = async (req, res) => {
                 }
             }
         })
-        // console.log(cart)
+        console.log(cart)
+
         res.json({
             products: cart.products,
             cartTotal: cart.cartTotal
@@ -177,6 +178,7 @@ exports.saveAddress = async (req, res) => { // ใช้เคลียร์ข
 
 exports.saveOrder = async (req, res) => { // ใช้เคลียร์ข้อมูลในตะกร้าสินค้า
     try {
+        const { id, amount, status, currency } = req.body.paymentIntent
         // get user cart
         const userCart = await prisma.cart.findFirst({
             where: { 
@@ -190,22 +192,24 @@ exports.saveOrder = async (req, res) => { // ใช้เคลียร์ข�
             return res.status(400).json({ message: "Cart is Empty"})
         }
         // check quantity
-        for (const item of userCart.products) {
-            const product = await prisma.product.findUnique({// หาสินค้าด้วยข้อมูลที่ลูป ว่าจน.ที่จะซื้อมันมีมากกว่าหรือน้อยกว่าในคลังหรือไม่
-                where: { id: item.productId },
-                select: { quantity: true, title: true }
-            })
+        // for (const item of userCart.products) {
+        //     const product = await prisma.product.findUnique({// หาสินค้าด้วยข้อมูลที่ลูป ว่าจน.ที่จะซื้อมันมีมากกว่าหรือน้อยกว่าในคลังหรือไม่
+        //         where: { id: item.productId },
+        //         select: { quantity: true, title: true }
+        //     })
             
-            // console.log("item", item)
-            // console.log("product", product)
-            if (!product || item.count > product.quantity) { // ถ้าจน.ที่ซื้อมีมากกว่าในคลัง
-                return res.status(400).json({ ok: false, message: `Sorry Product ${product?.title || 'Product'} is Sold!`})
-            }
-        }
+        //     // console.log("item", item)
+        //     // console.log("product", product)
+        //     if (!product || item.count > product.quantity) { // ถ้าจน.ที่ซื้อมีมากกว่าในคลัง
+        //         return res.status(400).json({ ok: false, message: `Sorry Product ${product?.title || 'Product'} is Sold!`})
+        //     }
+        // }
+
         // Create a new Order
+        const amountTHB = Number(amount) / 100 // เพื่อเก็บค่าสกุลที่เป็นสตางค์
         const order = await prisma.order.create({
-            data: {
-                products: {
+            data: {// เพิ่มลงในตารางหลัก
+                products: {// เพิ่มลงในตาราง one-to-many
                     create: userCart.products.map((item) => ({
                         productId: item.productId,
                         count: item.count,
@@ -215,9 +219,14 @@ exports.saveOrder = async (req, res) => { // ใช้เคลียร์ข�
                 orderedBy: {// เชื่อมตาราง order กับ user เพื่อหาว่าเป็น order ของใคร
                     connect: { id: req.user.id }
                 },
-                cartTotal: userCart.cartTotal
-            }
+                cartTotal: userCart.cartTotal,
+                stripePaymentId: id,
+                amount: Number(amountTHB),
+                status: status,
+                currency: currency,
+            },
         })
+
         // Update product
         const update = userCart.products.map((item) => ({
             where: { id: item.productId },
