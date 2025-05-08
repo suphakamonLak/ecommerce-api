@@ -5,8 +5,6 @@ const jwt = require('jsonwebtoken')
 exports.register = async (req, res) => {// function 
     try {
         const { email, password } = req.body
-        console.log(req.body)
-        
         // step 1 Validate body
         if (!email) {
             return res.status(400).json({message: "Email is require!"})
