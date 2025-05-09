@@ -48,16 +48,34 @@ exports.ChangeRole = async (req, res) => {
     }
 }
 
-exports.userCart = async (req, res) => {
+exports.userCart = async (req, res) => {// เพิ่มข้อมูลลงตะกร้าสินค้า
     try {
         const { cart } = req.body
 
-        // console.log(cart)
-        // console.log(req.user.id)
+        console.log(cart)
+        console.log(req.user.id)
 
         const user = await prisma.user.findFirst({
             where: { id: Number(req.user.id) }
         })
+
+        // check quantity
+        for (const item of cart) {
+            const product = await prisma.product.findUnique({// หาสินค้าด้วยข้อมูลที่ลูป ว่าจน.ที่จะซื้อมันมีมากกว่าหรือน้อยกว่าในคลังหรือไม่
+                where: { id: item.id },
+                select: { quantity: true, title: true }
+            })
+            
+            // console.log("item", item)
+            // console.log("product", product)
+            if (!product || item.count > product.quantity) { // ถ้าจน.ที่ซื้อมีมากกว่าในคลัง
+                return res.status(400).json({ 
+                    ok: false, 
+                    message: `ขออภัย สินค้า${product?.title || 'สินค้า'} หมด!`
+                })
+            }
+        }
+
         // delete old cart item เพื่อเพิ่มสินค้าใหม่เข้าไป
         await prisma.productOnCart.deleteMany({
             where: {
@@ -102,7 +120,7 @@ exports.userCart = async (req, res) => {
     }
 }
 
-exports.getUserCart = async (req, res) => {
+exports.getUserCart = async (req, res) => {// ดึงข้อมูลออกจากตะกร้า
     try {
         const cart = await prisma.cart.findFirst({
             where: {
@@ -191,19 +209,6 @@ exports.saveOrder = async (req, res) => { // ใช้เคลียร์ข�
         if (!userCart || userCart.products.length === 0) {
             return res.status(400).json({ message: "Cart is Empty"})
         }
-        // check quantity
-        // for (const item of userCart.products) {
-        //     const product = await prisma.product.findUnique({// หาสินค้าด้วยข้อมูลที่ลูป ว่าจน.ที่จะซื้อมันมีมากกว่าหรือน้อยกว่าในคลังหรือไม่
-        //         where: { id: item.productId },
-        //         select: { quantity: true, title: true }
-        //     })
-            
-        //     // console.log("item", item)
-        //     // console.log("product", product)
-        //     if (!product || item.count > product.quantity) { // ถ้าจน.ที่ซื้อมีมากกว่าในคลัง
-        //         return res.status(400).json({ ok: false, message: `Sorry Product ${product?.title || 'Product'} is Sold!`})
-        //     }
-        // }
 
         // Create a new Order
         const amountTHB = Number(amount) / 100 // เพื่อเก็บค่าสกุลที่เป็นสตางค์

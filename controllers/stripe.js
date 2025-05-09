@@ -8,6 +8,7 @@ exports.payment = async (req, res) => {
                 orderedById: req.user.id
             }
         })
+        console.log('cart', cart)
         const amountTHB = cart.cartTotal * 100// เนื่องจาก thb เป็นสตางค์
 
         // Create a paymentIntent with the order amount and currency
