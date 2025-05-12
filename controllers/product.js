@@ -159,7 +159,8 @@ exports.listby = async (req, res) => {// เรียงตาม order ที�
             take: limit,
             orderBy: {[sort]: order},// เรียงตามที่ผู้ใช้ต้องการ
             include: {
-                category: true
+                category: true,
+                images: true
             }
         })
         
