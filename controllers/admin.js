@@ -40,3 +40,66 @@ exports.getOrderAdmin = async (req, res) => {
         res.status(500).json({message: "Server Error"})
     }
 }
+
+exports.getDashboard = async (req, res) => {
+    try {
+        // ยอดขายทั้งหมด
+        const totalRevenue = await prisma.order.aggregate({
+            _sum: { amount: true },
+        })
+
+        // จน. orders ทั้งหมด
+        const totalOrders = await prisma.order.count();
+
+        // จน.สินค้าทั้งหมด
+
+        // จน.สินค้าที่หมด (aggregate สรุปข้อมูล)
+        const outofStockCount = await prisma.product.count({
+            where: {
+                quantity: 0,
+            }
+        })
+
+        // สินค้าขายดีที่สุด (top 5)
+        const topProducts = await prisma.product.findMany({
+            orderBy: { sold: 'desc' },
+            take: 5,
+            select: {
+                id: true,
+                title: true,
+                sold: true,
+                price: true,
+            }
+        })
+
+        // ยอดขายรายวัน (7 วันล่าสุด) เรียงข้อมูลจากมากไปน้อย
+        const salesByDate = await prisma.$queryRaw`
+            SELECT DATE(createdAt) as date, SUM(amount) as total
+            FROM \`Order\`
+            GROUP BY DATE(createdAt)
+            ORDER BY date desc
+            LIMIT 7;
+        `;
+
+        // ยอดขายรายเดือน 6 เดือนล่าสุด
+        const salesByMonth = await prisma.$queryRaw`
+            SELECT DATE_FORMAT(createdAt, '%Y-%m') as month, SUM(amount) as total
+            FROM \`Order\`
+            GROUP BY month
+            ORDER BY month desc
+            LIMIT 6;
+        `;
+
+        res.json({ 
+            totalRevenue,
+            totalOrders,
+            outofStockCount,
+            topProducts,
+            salesByDate,
+            salesByMonth
+        })
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({ message: "Server Error"})
+    }
+}
