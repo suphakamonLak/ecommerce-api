@@ -27,9 +27,9 @@ readdirSync('./routes')
 //     res.send('Jukkru')// ส่งออกไป
 // })
 
-app.get('/', (req, res) => {
-  res.send('API is running!');
-});
+// app.get('/', (req, res) => {
+//   res.send('API is running!');
+// });
 
 // step 2 Start server
 app.listen(5000, 
