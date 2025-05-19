@@ -27,6 +27,10 @@ readdirSync('./routes')
 //     res.send('Jukkru')// ส่งออกไป
 // })
 
+app.get('/', (req, res) => {
+  res.send('API is running!');
+});
+
 // step 2 Start server
 app.listen(5000, 
     () => console.log('Server is running on port 5000'))// port, callback function
