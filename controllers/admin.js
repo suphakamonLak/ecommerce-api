@@ -74,29 +74,37 @@ exports.getDashboard = async (req, res) => {
 
         // ยอดขายรายวัน (7 วันล่าสุด) เรียงข้อมูลจากมากไปน้อย
         const salesByDate = await prisma.$queryRaw`
-            SELECT DATE(createdAt) as date, SUM(amount) as total
-            FROM \`Order\`
-            GROUP BY DATE(createdAt)
+            SELECT DATE("createdAt") as date, SUM("amount") as total
+            FROM "Order"
+            GROUP BY DATE("createdAt")
             ORDER BY date desc
             LIMIT 7;
         `;
 
         // ยอดขายรายเดือน 6 เดือนล่าสุด
         const salesByMonth = await prisma.$queryRaw`
-            SELECT DATE_FORMAT(createdAt, '%Y-%m') as month, SUM(amount) as total
-            FROM \`Order\`
+            SELECT TO_CHAR("createdAt", 'YYYY-MM') as month, SUM("amount") as total
+            FROM "Order"
             GROUP BY month
             ORDER BY month desc
             LIMIT 6;
         `;
 
+        const revence = Number(totalRevenue._sum.amount || 0)
+
         res.json({ 
-            totalRevenue,
+            totalRevenue: revence,
             totalOrders,
             outofStockCount,
             topProducts,
-            salesByDate,
-            salesByMonth
+            salesByDate: salesByDate.map((item => ({
+                ...item,
+                total: Number(item.total)
+            }))),
+            salesByMonth: salesByMonth.map((item) => ({
+                ...item,
+                total: Number(item.total)
+            }))
         })
     } catch (err) {
         console.log(err)
