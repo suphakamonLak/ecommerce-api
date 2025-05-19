@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "name": "ecom",
+    "name": "e-commerce",
     "builds": [
       {
         "src": "server.js",
